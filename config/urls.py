@@ -35,7 +35,7 @@ urlpatterns = [
     path(f"{API_PREFIX}subjects/", include("apps.subjects.urls")),
     path(f"{API_PREFIX}exams/", include("apps.exams.urls")),
     path(f"{API_PREFIX}results/", include("apps.results.urls")),
-    path(f"{API_PREFIX}statistics/", include("apps.statistics.urls")),
+    path(f"{API_PREFIX}statistic/", include("apps.statistics.urls")),   
     path(f"{API_PREFIX}certificates/", include("apps.certificates.urls")),
     path(f"{API_PREFIX}notifications/", include("apps.notifications.urls")),
     path(f"{API_PREFIX}payments/", include("apps.payments.urls")),  

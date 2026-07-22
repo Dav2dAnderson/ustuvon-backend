@@ -118,10 +118,14 @@ ASGI_APPLICATION = "config.asgi.application"
 # Database
 # --------------------------------------------------------------------------
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default="postgres://postgres:postgres@localhost:5432/ustuvon",
-    ),
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DATABASE_NAME', 'drop'),
+        'USER': os.environ.get('DATABASE_USER', 'related'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'java7834'),
+        'HOST': os.environ.get('DATABASE_HOST', 'db'),
+        'PORT': os.environ.get('DATABASE_PORT', '5432'),
+    }
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
@@ -246,7 +250,7 @@ CORS_ALLOW_CREDENTIALS = True
 # --------------------------------------------------------------------------
 # Cache (Redis)
 # --------------------------------------------------------------------------
-REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
 
 CACHES = {
     "default": {
