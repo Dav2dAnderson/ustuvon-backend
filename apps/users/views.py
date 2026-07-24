@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 from . import services
 from .models import VerificationCode
 from .serializers import (
@@ -27,6 +28,7 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "auth"
 
+    @extend_schema(request=RegisterSerializer, responses={201: _auth_payload})
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -38,16 +40,23 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "auth"
 
+    @extend_schema(request=LoginSerializer, responses={200: _auth_payload})
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        result = services.login_user(**serializer.validated_data)
-        return Response(_auth_payload(result))
+        try:
+            result = services.login_user(**serializer.validated_data)
+            return Response(_auth_payload(result), status=200)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=400
+            )
 
 
 class VerifyRegistrationView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=VerifyCodeSerializer, responses={200: _auth_payload})
     def post(self, request):
         serializer = VerifyCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -58,6 +67,7 @@ class VerifyRegistrationView(APIView):
 class ResendVerificationView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=VerifyCodeSerializer, responses={200: _auth_payload})
     def post(self, request):
         channel = VerificationCode.Channel.SMS if request.user.phone else VerificationCode.Channel.EMAIL
         services.send_verification_request(
@@ -70,6 +80,7 @@ class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "auth"
 
+    @extend_schema(request=PasswordResetRequestSerializer, responses={200: _auth_payload})
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -81,6 +92,7 @@ class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "auth"
 
+    @extend_schema(request=PasswordResetConfirmSerializer, responses={200: _auth_payload})
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -99,6 +111,7 @@ class PasswordChangeRequestView(APIView):
 class PasswordChangeConfirmView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=PasswordChangeConfirmSerializer, responses={200: _auth_payload})
     def post(self, request):
         serializer = PasswordChangeConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
