@@ -51,7 +51,7 @@ ustuvon-backend/
 │   ├── notifications/           👤 Davronbek Nazarov   — SMS, email, Telegram
 │   ├── payments/                👤 Sirojiddin          — to'lovlar (admin side)
 │   ├── ai_parser/                👥 Abdulaziz + Davronbek Nazarov  — AI test import
-│   └── admin_panel/              👥 Javohir (content) + Sirojiddin (users/payments)
+│   └── admin_panel/              👥 Abdulaziz
 │
 ├── infra/
 │   ├── docker/                  👤 Abdulaziz
