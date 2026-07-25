@@ -20,11 +20,12 @@ def _build_user_stub(user_id=None):
 
 def _build_certificate_stub(user_id, certificate_number="UST-1234"):
     user = _build_user_stub(user_id)
+    result_id = uuid.uuid4()
     return SimpleNamespace(
         id=uuid.uuid4(),
         user=user,
         user_id=user.id,
-        result=SimpleNamespace(id=uuid.uuid4()),
+        result=SimpleNamespace(id=uuid.uuid4(), pk=result_id),
         certificate_number=certificate_number,
         pdf_file=None,
         status="generated",

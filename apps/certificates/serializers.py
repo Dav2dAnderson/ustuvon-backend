@@ -23,8 +23,8 @@ class CertificateSerializer(BaseModelSerializer):
         ]
         read_only_fields = ['certificate_number', '']
 
-        def get_user(self, obj):
-            return {
-                "id": obj.user.id,
-                "username": obj.user.username,
-            }
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }

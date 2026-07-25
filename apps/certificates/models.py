@@ -23,7 +23,7 @@ class Certificate(BaseModel):
         related_name="certificates",
     )
     result = models.OneToOneField(
-        "result.UserTestResult",
+        "results.UserTestResult",
         on_delete=models.CASCADE,
         related_name="certificate",
     )
