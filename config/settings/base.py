@@ -1,8 +1,3 @@
-"""
-Base settings shared by every environment.
-Environment-specific overrides live in local.py / staging.py / production.py.
-Select an environment via:  DJANGO_SETTINGS_MODULE=config.settings.local
-"""
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -26,13 +21,6 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
-
-
-
-
-# --------------------------------------------------------------------------
-# Applications
-# --------------------------------------------------------------------------
 DJANGO_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -64,18 +52,9 @@ LOCAL_APPS = [
     "apps.admin_panel",
 ]
 
-
-
-
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 AUTH_USER_MODEL = "users.User"
 
-
-
-
-# --------------------------------------------------------------------------
-# Middleware
-# --------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -89,9 +68,6 @@ MIDDLEWARE = [
     "core.middleware.RateLimitMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
-
-
-
 
 TEMPLATES = [
     {
@@ -111,12 +87,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-
-
-
-# --------------------------------------------------------------------------
-# Database
-# --------------------------------------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -129,12 +99,6 @@ DATABASES = {
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
-
-
-
-# --------------------------------------------------------------------------
-# Password validation
-# --------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {
@@ -145,13 +109,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-
-
-
-
-# --------------------------------------------------------------------------
-# Internationalization
-# --------------------------------------------------------------------------
 LANGUAGE_CODE = "uz"
 TIME_ZONE = "Asia/Tashkent"
 USE_I18N = True
@@ -162,12 +119,6 @@ LANGUAGES = [
     ("ru", "Russian"),
 ]
 
-
-
-
-# --------------------------------------------------------------------------
-# Static & media
-# --------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
@@ -175,13 +126,6 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-
-
-
-# --------------------------------------------------------------------------
-# Django REST Framework
-# --------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",

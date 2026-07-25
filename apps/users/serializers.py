@@ -2,6 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from core.serializers import BaseModelSerializer
 from .models import User
+import re
 
 
 class UserSerializer(BaseModelSerializer):
@@ -28,12 +29,18 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
     def validate(self, attrs):
+
         if not attrs.get("phone") and not attrs.get("email"):
             raise serializers.ValidationError(
                 "Telefon raqam yoki email manzillaridan biri kiritilishi shart."
             )
-        return attrs
-
+        if phone:
+            regex = r'^\+998(9[01345789]|2[0]|3[3]|5[05]|7[0-9]|8[8])[0-9]{7}$'
+            if not re.match(regex, attrs["phone"]):
+                raise serializers.ValidationError(
+                    {"phone": "Phone number must not contain digits"}
+                )
+            return attrs
 
 class LoginSerializer(serializers.Serializer):
     identifier = serializers.CharField(help_text="Telefon raqam yoki email")
