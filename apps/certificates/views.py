@@ -21,9 +21,21 @@ class CertificateDetailView(RetrieveAPIView):
     serializer_class = CertificateSerializer
     permission_classes = [IsAuthenticated, IsCertificateOwner]
 
-    def get_queryset(self):
-        return get_user_certificates(self.request.user)
+    def get_object(self):
+        pk = self.kwargs.get('pk')
+        certificates = get_user_certificates(self.request.user)
 
+        if hasattr(certificates, 'filter'):
+            obj = certificates.filter(pk=pk).first()
+        else:
+            obj = next((c for c in certificates if str(c.id) == str(pk)), None)
+
+        if not obj:
+            from rest_framework.exceptions import NotFound
+            raise NotFound()
+
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 class CertificateValidationView(APIView):
     """
