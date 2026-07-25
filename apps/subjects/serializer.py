@@ -1,25 +1,5 @@
-from unicodedata import category
-
 from rest_framework import serializers
-from apps.subjects.models import Subject, Categories
-
-class CategoriesSerializer(serializers.ModelSerializer):
-    author_first_name = serializers.ReadOnlyField(
-        source='author.first_name', default=""
-    )
-    author_last_name = serializers.ReadOnlyField(
-        source='author.last_name', default=""
-    )
-
-    class Meta:
-        model = Categories
-        fields = [
-            'title',
-            'is_active',
-            'created_at',
-            'author_last_name',
-            'author_first_name'
-        ]
+from apps.subjects.models import Subject, Categories, Module, Topic
 
 class CategoriesCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,24 +39,14 @@ class CategoriesUpdateSerializer(serializers.ModelSerializer):
             'author_first_name'
         ]
 
-class CreateSubjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subject
-        fields = [
-            'title',
-            'category',
-            'description',
-            'author_first_name',
-            'author_last_name'
-        ]
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title),
+        instance.author_first_name = validated_data.get('author_first_name', instance.author_first_name),
+        instance.author_last_name = validated_data.get('author_last_name', instance.author_last_name),
+        instance.is_active = validated_data.get('is_active', instance.is_active),
+        instance.save()
+        return instance
 
-    def create(self, validated_data):
-        return super().create(validated_data)
-
-class SubjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subject
-        fields = '__all__'
 
 class SubjectCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -132,3 +102,102 @@ class SubjectUpdateSerializer(serializers.ModelSerializer):
         instance.author_first_name = validated_data.get('author_first_name', instance.author_first_name),
         instance.author_last_name = validated_data.get('author_last_name', instance.author_last_name),
         instance.save()
+
+class ModuleCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Module
+        fields = [
+            'title',
+            'subject'
+        ]
+
+    def create(self, validated_data):
+        module = Module.objects.create(**validated_data)
+        return module
+
+class ModuleUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Module
+        fields = [
+            'title',
+            'subject',
+            'is_active'
+        ]
+    def validate_subject(self, value):
+        if not Subject.objects.filter(subject=value).exists():
+            raise serializers.ValidationError("This Subject does not exist")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title),
+        instance.subject = validated_data.get('subject', instance.subject),
+        instance.is_active = validated_data.get('is_active', instance.is_active),
+        instance.save()
+        return instance
+
+class TopicCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = [
+            'title',
+            'module',
+            'order',
+            'is_active',
+        ]
+    def validate_module(self, data):
+        if not Module.objects.filter(module=data).exists():
+            raise serializers.ValidationError("This module does not exist")
+
+        return data
+
+    def create(self, validated_data):
+        topic = Topic.objects.create(**validated_data)
+
+class TopicUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = [
+            'title',
+            'module',
+            'order',
+            'is_active'
+        ]
+
+    def validate_module(self, value):
+        if not Module.objects.filter(module=value).exists():
+            raise serializers.ValidationError("This module does not exist")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title),
+        instance.module = validated_data.get('module', instance.module),
+        instance.order = validated_data.get('order', instance.order),
+        instance.is_active = validated_data.get('is_active', instance.is_active),
+        instance.save()
+        return instance
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = ['id', 'title', 'order']
+class ModuleSerializer(serializers.ModelSerializer):
+    topics = TopicSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Module
+        fields = ['id', 'title', 'order', 'topics']
+
+class SubjectSerializer(serializers.ModelSerializer):
+    modules = ModuleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Subject
+        fields = ['id', 'title', 'description', 'modules']
+
+class CategoryTreeSerializer(serializers.ModelSerializer):
+    subjects = SubjectSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Categories
+        fields = ['id', 'title', 'subjects']

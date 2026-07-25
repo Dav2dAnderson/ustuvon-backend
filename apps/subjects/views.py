@@ -1,39 +1,33 @@
 from django.shortcuts import get_object_or_404
-from pygments.styles import nord
-
-from apps.subjects.serializer import (SubjectCreateSerializer,
-                                      CategoriesCreateSerializer,
-                                      CategoriesUpdateSerializer,
-                                      CategoriesSerializer,
-                                      SubjectUpdateSerializer, SubjectSerializer)
-from apps.subjects.models import Categories, Subject
+from apps.subjects import serializer
+from apps.subjects.serializer import (
+    SubjectCreateSerializer,
+    CategoriesCreateSerializer,
+    CategoriesUpdateSerializer,
+    SubjectUpdateSerializer,
+    TopicCreateSerializer,
+    TopicUpdateSerializer,
+    ModuleCreateSerializer,
+    ModuleUpdateSerializer,
+    CategoryTreeSerializer
+)
+from apps.subjects.models import (
+    Categories,
+    Subject,
+    Topic,
+    Module,
+)
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets
 
-class DynamicPageSizePagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = (
-        "page_size"
+class TaxonomyTreeView(viewsets.ReadOnlyModelViewSet):
+    queryset = Categories.objects.filter(is_active=True).prefetch_related(
+        'subject__modules__topics'
     )
-    max_page_size = 100
+    serializer_class = CategoryTreeSerializer
 
-class CategoriesView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
-    serializer_class = CategoriesSerializer
-    pagination_class = DynamicPageSizePagination
-
-    def get(self, request):
-        categories = Categories.objects.all().select_related("author").all()
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(categories, request, view=self)
-
-        if page is not None:
-            serializer = self.serializer_class(page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-        serializer = self.serializer_class(categories, many=True)
-        return Response(serializer.data, status=200)
 
 class CategoryCreateView(APIView):
     permission_classes = (IsAuthenticated, IsAdminUser)
@@ -89,21 +83,6 @@ class CategoryDeleteView(APIView):
             }, status=200)
         return Response({"detail": "This category is not found"}, status=204)
 
-class SubjectView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
-    serializer_class = SubjectSerializer
-    pagination_class = DynamicPageSizePagination
-
-    def get(self,request):
-        subjects = Subject.objects.all().select_related("author").all()
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(subjects, request, view=self)
-
-        if page is not None:
-            serializer = self.serializer_class(page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-        serializer = self.serializer_class(subjects, many=True)
-        return Response(serializer.data, status=200)
 
 class SubjectCreateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -157,3 +136,110 @@ class SubjectDeleteView(APIView):
             return Response({
                 "detail": "This subject is not found"
             }, status=404)
+
+class ModuleCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        serializer = ModuleCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "detail": "Something is wrong",
+                "error": serializer.errors
+            }, status=400)
+        serializer.save()
+        return Response({
+            "detail": "Succesfully Created",
+            "data": serializer.data
+        }, status=201)
+class ModuleUpdateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def patch(self, request, pk):
+        module = get_object_or_404(Module, pk=pk)
+
+        serializer = ModuleUpdateSerializer(instance=module, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response({
+                "detail": "Something is wrong",
+                "error": serializer.errors
+            }, status=400)
+        serializer.save()
+        return Response({
+            "detail": "Succesfully Updated",
+            "data": serializer.data
+        }, status=200)
+
+class ModuleDeleteView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def delete(self, request, pk):
+        module = get_object_or_404(Module, pk=pk)
+
+        if module:
+            module.is_active = False
+            module.save()
+            return Response({
+                "detail": "Succesfully deleted"
+            }, status=200)
+        else:
+            return Response({
+                "detail": "This module not found",
+            }, status=400)
+
+class TopicCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        serializer = TopicCreateSerializer(data=request.data)
+        try:
+            if not serializer.is_valid():
+                return Response({
+                    "detail": "Something is wrong",
+                    "error": serializer.errors
+                }, status=400)
+            serializer.save()
+            return Response({
+                "detail": "Succesfully Created",
+                "data": serializer.data
+            }, status=201)
+        except Exception as e:
+            return f"error {e}"
+        
+class TopicUpdateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def patch(self, request, pk):
+        topic = get_object_or_404(Topic, pk=pk)
+
+        serializer = TopicUpdateSerializer(instance=topic, data=request.data, partial=True)
+
+        
+        if not serializer.is_valid():
+            return Response({
+            "detail": "Something is wrong",
+            "error": serializer.errors
+            }, status=400)
+        serializer.save()
+        return Response({
+        "detail": "Succesfully Updated",
+        "data": serializer.data
+        }, status=200)
+
+class TopicDeleteView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def delete(self, request, pk):
+        topic = get_object_or_404(Topic, pk=pk)
+    
+        if topic:
+            topic.is_active = False
+            topic.save()
+            return Response({
+                "detail": "Succesfully deleted"
+            }, status=200)
+        else:
+            return Response({
+                "detail": "This module not found",
+            }, status=400)

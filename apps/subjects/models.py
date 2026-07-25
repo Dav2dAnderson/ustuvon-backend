@@ -44,3 +44,31 @@ class Subject(models.Model):
 
     def __str__(self):
         return f"title: {self.title} | Muallif: {self.author_first_name}, {self.author_last_name}"
+
+class Module(models.Model):
+    title = models.CharField(max_length=150)
+    subject =models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='modules')
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'modules'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"title: {self.title} | Subject: {self.subject}"
+
+class Topic(models.Model):
+    title = models.CharField(max_length=250)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='topics')
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'topics'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"title: {self.title} | Module: {self.module}"
