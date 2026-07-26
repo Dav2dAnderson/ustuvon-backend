@@ -1,7 +1,15 @@
 from django.urls import path
-
-app_name = "exams"
+from .views import (
+    QuestionListCreateView, QuestionDetailView,
+    ExaminationListCreateView, ExaminationDetailView,
+    ResultListCreateView, ResultDetailView
+)
 
 urlpatterns = [
-    # Keyinchalik exams view'larini shu yerga ulaysiz
+    path('questions/', QuestionListCreateView.as_view()),
+    path('questions/<int:pk>/', QuestionDetailView.as_view()),
+    path('examinations/', ExaminationListCreateView.as_view()),
+    path('examinations/<int:pk>/', ExaminationDetailView.as_view()),
+    path('results/', ResultListCreateView.as_view()),
+    path('results/<int:pk>/', ResultDetailView.as_view()),
 ]
