@@ -1,7 +1,20 @@
 from django.urls import path
+app_name = "certificates"
+
+urlpatterns = [
+
+from .views import (
+    CertificateDetailView,                 
+    CertificateListView, 
+    CertificateValidationView,
+    
+    )
+
 
 app_name = "certificates"
 
 urlpatterns = [
-    # Keyinchalik exams view'larini shu yerga ulaysiz
+    path("", CertificateListView.as_view(), name="list"),
+    path("<uuid:pk>/", CertificateDetailView.as_view(), name="detail"),
+    path("validate/<str:certificate_number>/", CertificateValidationView.as_view(), name="validate")
 ]
