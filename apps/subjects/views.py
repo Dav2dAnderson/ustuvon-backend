@@ -23,6 +23,9 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 
 class TaxonomyTreeView(viewsets.ReadOnlyModelViewSet):
+
+    permission_classes = [IsAuthenticated, IsAuthenticated]
+    
     queryset = Categories.objects.filter(is_active=True).prefetch_related(
         'subject__modules__topics'
     )
