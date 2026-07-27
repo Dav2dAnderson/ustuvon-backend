@@ -1,8 +1,7 @@
 from django.db import models
 
 class UserTestResult(models.Model):
-    """Placeholder — to be implemented"""
-    
-    class Meta:
-        app_label = 'results'
+    score = models.IntegerField(default=0)
 
+    def __str__(self):
+        return f"Result: {self.score}"

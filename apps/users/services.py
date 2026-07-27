@@ -9,6 +9,7 @@ from core.exceptions import (
 from . import selectors
 from .models import User, VerificationCode
 from .tasks import send_verification_code_task
+from django.db.models import Q
 
 
 def _issue_tokens(user: User) -> dict:
@@ -67,11 +68,19 @@ def verify_registration(user: User, *, code: str) -> User:
 
 
 def login_user(*, identifier: str, password: str) -> dict:
-    user = authenticate(identifier=identifier, password=password)
-    if user is None:
-        raise PermissionDeniedServiceError("Login yoki parol noto'g'ri.")
-    return {"user": user, **_issue_tokens(user)}
+    clean_identifier = identifier.strip()
 
+    if clean_identifier.isdigit() and not clean_identifier.startswith("+"):
+        clean_identifier = f"+{clean_identifier}"
+    user = User.objects.filter(
+        Q(phone=clean_identifier) | Q(email=clean_identifier)
+    ).first()
+    if user is None or not user.check_password(password):
+        raise PermissionDeniedServiceError("Login yoki parol noto'g'ri.")
+
+    if not user.is_active:
+        raise PermissionDeniedServiceError("Account Faol emas")
+    return {"user": user, **_issue_tokens(user)}
 
 def request_password_reset(*, identifier: str) -> None:
     user = selectors.get_user_by_identifier(identifier)
