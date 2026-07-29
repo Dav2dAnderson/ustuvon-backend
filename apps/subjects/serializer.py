@@ -13,27 +13,25 @@ class CategoriesCreateSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        request = self.context.get("request")
-        user = request.user if request and request.user.is_authenticated else None
-
-        first_name = validated_data.get("author_first_name")
-        last_name = validated_data.get("author_last_name")
-
-        if user:
+        author = validated_data.pop("author", None)
+        first_name = validated_data.pop("author_first_name", None)
+        last_name = validated_data.pop("author_last_name", None)
+        
+        if author and author.is_authenticated:
             if first_name:
-                user.first_name = first_name
+                author.first_name = first_name
             if last_name:
-                user.last_name = last_name
-            user.save()
-
+                author.last_name = last_name
+            author.save()
+        
         category = Categories.objects.create(
-            author=user,
-            author_first_name = first_name,
-            author_last_name = last_name,
+            author=author,
+            author_first_name=first_name,
+            author_last_name=last_name,
             **validated_data
         )
         return category
-    
+        
 class CategoriesUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categories

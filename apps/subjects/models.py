@@ -14,17 +14,18 @@ class Categories(models.Model):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        if self.author and self.author_first_name:
-            self.author_first_name = self.author_first_name
-            self.author_last_name = self.author_last_name
+        if self.author_id and not self.author_first_name:
+            self.author_first_name = self.author.first_name
+            self.author_last_name = self.author.last_name
+
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"title {self.title} | Muallif: {self.author_first_name}, {self.author_last_name}"
     
 class Subject(models.Model):
     title = models.CharField(max_length=255, unique=True)
-    category = models.ForeignKey(Categories, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(Categories, on_delete=models.CASCADE, null=True, blank=True, related_name='subjects')
     description = models.TextField(default='')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subjects', null=True, blank=True)
     author_first_name = models.CharField(max_length=100, blank=True, default="")

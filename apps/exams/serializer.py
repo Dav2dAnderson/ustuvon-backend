@@ -1,99 +1,128 @@
 from rest_framework import serializers
-from .models import Difficulty, Question, Option, Examination, Result
+from apps.subjects.models import Topic
+from .models import Examination, Question, Option, Result, Difficulty, TestType
+
 
 class OptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Option
-        fields = ['id', 'text', 'is_correct']
+        fields = ['id', 'text', 'is_correct', 'image']
 
-class QuestionCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ['id', 'topic', 'text', 'difficulty', 'options']
-
-    def validate_options(self, value):
-        if len(value) < 4:
-            raise serializers.ValidationError('4 ta variant bo`lishi shart')
-
-        correct = [o for o in value if o.get('is_correct')]
-        if len(correct) != 1:
-            raise serializers.ValidationError('Kamida faqat bitta javob bo`lishi kerak')
-        return value
-
-    def create(self, validated_data):
-        options_data = validated_data.pop('is_correct')
-        question = Question.objects.create(**validated_data)
-        Option.objects.bulk_create([
-            Option(question=question, **option) for option in options_data
-        ])
-        return question
-
-class QuestionListSerializer(serializers.ModelSerializer):
-    options = OptionSerializer(many=True, read_only=True)
-    difficulty = serializers.CharField(source='get_difficulty_display')
+class QuestionSerializer(serializers.ModelSerializer):
+    options = OptionSerializer(many=True, required=False)
+    topic_title = serializers.ReadOnlyField(source='topic.title')
 
     class Meta:
         model = Question
-        fields = ['id', 'topic', 'text', 'difficulty', 'options', 'created_at']
+        fields = [
+            'id',
+            'topic',
+            'topic_title',
+            'text',
+            'difficulty',
+            'passage_text',
+            'audio_file',
+            'image',
+            'options',
+            'created_at'
+        ]
 
-class QuestionUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Question
-        fields = ['text', 'difficulty', 'topic']
+    def validate(self, attrs):
+        request = self.context.get('request')
+        options_data = self.initial_data.get('options', [])
+        if request and request.method in ['POST', 'PUT']:
+            if len(options_data) < 2:
+                raise serializers.ValidationError({
+                    "options": "Savolda kamida 2 ta variant bo'lishi shart."
+                })
 
-class ExaminationCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Examination
-        fields = ['id', 'title', 'duration_time', 'transition_assessment', 'questions', 'is_active']
+            correct_answers = [opt for opt in options_data if opt.get('is_correct') is True]
+            if len(correct_answers) == 0:
+                raise serializers.ValidationError({
+                    "options": "Variantlar orasida kamida 1 ta to'g'ri javob (is_correct=True) ko'rsatilsin."
+                })
 
-    def validate_questions(self, value):
-        if len(value) == 0:
-            raise serializers.ValidationError('Kamida bitta savol bo`lishi kerak')
-        return value
-
-    def validate_transition_assessment(self, attrs):
-        if not (0 <= attrs <= 100):
-            raise serializers .ValidationError("O`tish bali 0 dan 100 gacha bo`lishi shart")
         return attrs
 
+
 class ExaminationListSerializer(serializers.ModelSerializer):
-    questions_count = serializers.SerializerMethodField()
+    questions_count = serializers.IntegerField(source='questions.count', read_only=True)
 
     class Meta:
         model = Examination
-        fields = ['id', 'title', 'duration_time', 'transition_assessment', 'questions_count', 'is_active', 'created_at']
-
-    def get_questions_count(self, obj):
-        return obj.questions.count()
+        fields = [
+            'id',
+            'title',
+            'test_type',
+            'duration_time',
+            'transition_assessment',
+            'questions_count',
+            'is_active',
+            'created_at'
+        ]
 
 
 class ExaminationDetailSerializer(serializers.ModelSerializer):
-    questions = QuestionListSerializer(many=True, read_only=True)
+    """Test haqida to'liq ma'lumot va savollarni chiqarish/yaratish uchun serializer"""
+    questions = QuestionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Examination
-        fields = ['id', 'title', 'duration_time', 'transition_assessment', 'questions', 'is_active', 'created_at']
+        fields = [
+            'id',
+            'title',
+            'test_type',
+            'duration_time',
+            'transition_assessment',
+            'instruction_audio',
+            'questions',
+            'is_active',
+            'created_at'
+        ]
 
-
-class ResultCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Result
-        fields = ['id', 'exam', 'score']
-
-    def validate_score(self, value):
-        if not (0 <= value <= 100):
-            raise serializers.ValidationError("Score 0 dan 100 gacha bo'lishi kerak")
+    def validate_duration_time(self, value):
+        if value < 5 or value > 360:
+            raise serializers.ValidationError("Test vaqti 5 va 360 daqiqa oralig'ida bo'lishi kerak.")
         return value
 
-    def create(self, validated_data):
-        request = self.context.get('request')
-        validated_data['user'] = request.user
-        return Result.objects.create(**validated_data)
+    def validate_transition_assessment(self, value):
+        if value < 0 or value > 100:
+            raise serializers.ValidationError("O'tish bali 0 va 100 oralig'ida bo'lishi kerak.")
+        return value
 
 
-class ResultListSerializer(serializers.ModelSerializer):
-    exam_title = serializers.CharField(source='exam.title', read_only=True)
-    user_email = serializers.CharField(source='user.email', read_only=True)
+class ResultSerializer(serializers.ModelSerializer):
+    user_full_name = serializers.ReadOnlyField(source='user.get_full_name')
+    exam_title = serializers.ReadOnlyField(source='exam.title')
 
     class Meta:
         model = Result
-        fields = ['id', 'user_email', 'exam_title', 'score', 'is_passed', 'completed_at']
+        fields = [
+            'id',
+            'user',
+            'user_full_name',
+            'exam',
+            'exam_title',
+            'score',
+            'is_passed',
+            'completed_at'
+        ]
+        read_only_fields = ['user', 'is_passed', 'completed_at']
+
+    def validate_score(self, value):
+        if value < 0 or value > 100:
+            raise serializers.ValidationError("To'plangan ball 0 va 100 oralig'ida bo'lishi shart.")
+        return value
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        exam = attrs.get('exam')
+
+        if request and request.user and exam:
+            if not request.user.is_staff:
+                already_taken = Result.objects.filter(user=request.user, exam=exam).exists()
+                if already_taken:
+                    raise serializers.ValidationError({
+                        "exam": "Siz ushbu imtihonni topshirib bo'lgansiz. Qayta topshirish taqiqlangan!"
+                    })
+        return attrs

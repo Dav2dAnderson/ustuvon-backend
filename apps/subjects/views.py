@@ -26,9 +26,7 @@ class TaxonomyTreeView(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [IsAuthenticated, IsAuthenticated]
     
-    queryset = Categories.objects.filter(is_active=True).prefetch_related(
-        'subject__modules__topics'
-    )
+    queryset = Categories.objects.prefetch_related('subjects__modules__topics')
     serializer_class = CategoryTreeSerializer
 
 
